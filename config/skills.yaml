@@ -1,0 +1,21 @@
+# Informational: which skill each agent owns.
+# Actual skill objects are defined in src/debate/skills/definitions.py.
+# This file documents the assignment and is read by the README/docs generators.
+
+agent_skills:
+  judge:
+    - judge_moderation_skill    # neutral moderation of each round
+    - verdict_skill             # final scored judgment; no ties allowed
+    - json_protocol_skill       # enforce JSON-only output
+
+  pro:
+    - pro_argument_skill        # construct pro-side arguments
+    - evidence_retrieval_skill  # web-search for supporting evidence
+    - rebuttal_skill            # directly counter con's last argument
+    - json_protocol_skill       # enforce JSON-only output
+
+  con:
+    - con_argument_skill        # construct con-side arguments
+    - evidence_retrieval_skill  # web-search for supporting evidence
+    - rebuttal_skill            # directly counter pro's last argument
+    - json_protocol_skill       # enforce JSON-only output

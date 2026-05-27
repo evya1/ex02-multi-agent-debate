@@ -1,0 +1,38 @@
+debate:
+  # The motion being debated.
+  topic: "Artificial Intelligence will do more good than harm for humanity"
+
+  # Number of argument rounds per side.
+  # budget mode: 5 rounds (≈ 15–20 API calls, < $0.20 with Haiku)
+  # full mode:  10 rounds
+  rounds: 5
+  mode: "budget"   # "budget" | "full"
+
+gatekeeper:
+  # Hard cap on total API spend for one debate session (USD).
+  max_budget_usd: 2.0
+  # Max Anthropic API calls per minute across all agents.
+  max_calls_per_minute: 20
+  # How many times to retry a failed call before giving up.
+  max_retries: 3
+  # Exponential back-off base (seconds between retries doubles each time).
+  retry_backoff_factor: 2.0
+
+timeouts:
+  # Max seconds an agent may spend generating a single response.
+  agent_call_seconds: 90
+  # Max seconds a DuckDuckGo evidence search may run.
+  evidence_search_seconds: 15
+
+watchdog:
+  enabled: true
+  # A call running longer than this (seconds) triggers a warning log.
+  stall_threshold_seconds: 120
+  # How often the watchdog checks for stalled calls.
+  check_interval_seconds: 10
+
+logging:
+  level: "INFO"
+  # Structured JSONL log path (relative to project root).
+  file: "logs/debate.jsonl"
+  console: true

@@ -1,0 +1,29 @@
+# Model and token configuration per agent role.
+# Swap any model for claude-sonnet-4-6 if you want higher-quality arguments
+# at the cost of roughly 10-15× the token price.
+
+agents:
+  judge:
+    model: "claude-haiku-4-5-20251001"
+    max_tokens: 1024
+    temperature: 0.3   # low variance — judge should be consistent
+
+  pro:
+    model: "claude-haiku-4-5-20251001"
+    max_tokens: 1024
+    temperature: 0.7   # some creativity for persuasive arguments
+
+  con:
+    model: "claude-haiku-4-5-20251001"
+    max_tokens: 1024
+    temperature: 0.7
+
+# Approximate per-model cost (USD per 1 000 000 tokens).
+# Used by the Gatekeeper to track budget consumption.
+pricing:
+  "claude-haiku-4-5-20251001":
+    input_per_mtok: 0.80
+    output_per_mtok: 4.00
+  "claude-sonnet-4-6":
+    input_per_mtok: 3.00
+    output_per_mtok: 15.00
