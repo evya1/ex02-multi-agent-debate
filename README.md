@@ -188,6 +188,31 @@ uv run ruff check src tests
 uv run ruff check --fix src tests && uv run ruff format src tests
 ```
 
+## File-Length Rule
+
+Every Python file under `src/` and `tests/` must be **at most 150 lines**.
+This is enforced two ways:
+
+**Standalone script** (prints violations, exits 1 if any):
+
+```bash
+python scripts/check_file_length.py              # check src/ and tests/
+python scripts/check_file_length.py --summary    # show all files, not just violations
+python scripts/check_file_length.py src/debate/models/  # check a subtree
+python scripts/check_file_length.py --max 200   # override the limit
+```
+
+**Pytest test** (runs automatically with the full suite):
+
+```bash
+uv run pytest tests/unit/test_file_lengths.py -v
+```
+
+Files currently over the limit are listed as `KNOWN_VIOLATIONS` in
+`tests/unit/test_file_lengths.py` and are marked `xfail` so CI stays green
+while they are scheduled to be split. Once a file is split to ≤ 150 lines,
+remove it from that set — the test will then enforce it stays fixed.
+
 ---
 
 ## How It Works

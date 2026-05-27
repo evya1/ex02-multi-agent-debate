@@ -40,11 +40,16 @@ uv run pytest tests/integration/ -v
 # Single test file
 uv run pytest tests/unit/test_agents.py -v
 
-# Lint
+# Lint (style + imports)
 uv run ruff check src tests
 
 # Auto-fix + format
 uv run ruff check --fix src tests && uv run ruff format src tests
+
+# File-length check (max 150 lines per Python file)
+python scripts/check_file_length.py            # prints violations, exits 1 if any
+python scripts/check_file_length.py --summary  # show every file, not just violations
+python scripts/check_file_length.py src/debate/models/  # check a subtree
 ```
 
 ## Architecture
