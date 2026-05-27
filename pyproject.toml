@@ -23,16 +23,30 @@ agent-debate = "debate.cli.entry:main"
 dev = [
     "pytest>=8.0",
     "pytest-mock>=3.12",
+    "pytest-cov>=5.0",
     "ruff>=0.4",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--cov=debate --cov-report=term-missing --cov-fail-under=85"
 
 [tool.pytest.ini_options.markers]
 unit = "marks tests as unit tests (fast, offline)"
 integration = "marks tests as integration tests (may run full pipeline)"
+
+[tool.coverage.run]
+source = ["src/debate"]
+omit = ["*/cli/*", "*/providers/anthropic_provider.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]
 
 [tool.ruff]
 src = ["src"]
