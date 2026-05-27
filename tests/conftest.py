@@ -1,17 +1,16 @@
 """
 Shared pytest fixtures.
 
-All fixtures that touch the Anthropic API use mocks so tests run
-offline without any API key.  The debate config is set to 1 round
-to keep test execution fast.
+All fixtures use mock providers so tests run offline without any API key.
+The debate config is set to 1 round to keep test execution fast.
 """
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
+from debate.gatekeeper import Gatekeeper
 from debate.models.config import (
     AgentModelConfig,
     AppConfig,
@@ -21,6 +20,8 @@ from debate.models.config import (
     TimeoutSettings,
     WatchdogSettings,
 )
+from debate.providers.mock_llm import MockLLMProvider
+from debate.providers.mock_search import MockSearchProvider
 from debate.skills.definitions import build_registry
 
 
@@ -46,34 +47,21 @@ def skill_registry():
 
 
 @pytest.fixture()
-def mock_gatekeeper(minimal_config):
+def mock_llm_provider():
+    """A deterministic MockLLMProvider that never makes real API calls."""
+    return MockLLMProvider()
+
+
+@pytest.fixture()
+def mock_search_provider():
+    """A deterministic MockSearchProvider that never hits the web."""
+    return MockSearchProvider()
+
+
+@pytest.fixture()
+def mock_gatekeeper(minimal_config, mock_llm_provider, mock_search_provider):
     """
-    A Gatekeeper whose call_llm returns a valid JSON DebateMessage and
-    whose call_search returns two fake search hits.
-    Prevents any real network calls during tests.
+    A real Gatekeeper wired to mock providers.
+    Agents can call it normally; no real network access occurs.
     """
-    gk = MagicMock()
-    gk.total_cost = 0.0
-
-    def fake_llm(**kwargs):
-        msg = MagicMock()
-        msg.stop_reason = "end_turn"
-        text_block = MagicMock()
-        text_block.type = "text"
-        text_block.text = (
-            '{"message_type": "argument", "role": "pro", "round": 1, '
-            '"content": "AI benefits humanity.", "evidence": ['
-            '{"source": "Nature", "quote": "AI aids diagnostics.", "url": "https://example.com"}]}'
-        )
-        msg.content = [text_block]
-        return msg
-
-    def fake_search(query: str):
-        return [
-            {"source": "BBC News", "quote": "AI transforms healthcare.", "url": "https://bbc.com"},
-            {"source": "MIT", "quote": "AI increases productivity.", "url": "https://mit.edu"},
-        ]
-
-    gk.call_llm.side_effect = fake_llm
-    gk.call_search.side_effect = fake_search
-    return gk
+    return Gatekeeper(minimal_config, mock_llm_provider, mock_search_provider)

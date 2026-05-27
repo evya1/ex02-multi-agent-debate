@@ -1,7 +1,7 @@
 """
 Gatekeeper — the single point of contact with all external services.
 
-Every Anthropic API call and every DuckDuckGo search passes through here.
+Every LLM call and every search passes through here.
 The Gatekeeper enforces:
   1. Budget cap   — raises BudgetExceededError when the USD limit is hit.
   2. Rate limit   — sleeps to stay within max_calls_per_minute.
@@ -10,6 +10,11 @@ The Gatekeeper enforces:
 
 Why centralise this?  Agents stay clean (no error-handling boilerplate) and
 the spending/rate state is consistent across all three agents in one session.
+
+Provider-agnostic since Phase 07:
+  The Gatekeeper no longer imports `anthropic` or `duckduckgo_search` directly.
+  Instead it holds an AbstractLLMProvider and AbstractSearchProvider, injected
+  at construction.  Swap providers by passing different implementations.
 """
 from __future__ import annotations
 
@@ -21,10 +26,13 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Any
 
-import anthropic
-from duckduckgo_search import DDGS
-
 from debate.models.config import AppConfig, GatekeeperSettings, PricingEntry, TimeoutSettings
+from debate.providers.base import (
+    AbstractLLMProvider,
+    AbstractSearchProvider,
+    LLMResponse,
+    SearchResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +44,22 @@ class BudgetExceededError(RuntimeError):
 class Gatekeeper:
     """
     Wraps every external call with budget accounting, rate limiting, and timeouts.
-    Agents call `call_llm` and `call_search`; they never touch the SDK directly.
+    Agents call `call_llm` and `call_search`; they never touch providers directly.
+
+    Args:
+        config:           Full application config (budget, rate, pricing).
+        llm_provider:     Concrete LLM back-end (AnthropicProvider, MockLLMProvider, …).
+        search_provider:  Concrete search back-end (DuckDuckGoSearchProvider, MockSearch, …).
     """
 
-    def __init__(self, config: AppConfig) -> None:
-        api_key = self._require_api_key()
-        self._client = anthropic.Anthropic(api_key=api_key)
+    def __init__(
+        self,
+        config: AppConfig,
+        llm_provider: AbstractLLMProvider,
+        search_provider: AbstractSearchProvider,
+    ) -> None:
+        self._llm = llm_provider
+        self._search = search_provider
         self._gk: GatekeeperSettings = config.gatekeeper
         self._timeouts: TimeoutSettings = config.timeouts
         self._pricing: dict[str, PricingEntry] = config.pricing
@@ -60,30 +78,30 @@ class Gatekeeper:
         model: str,
         max_tokens: int,
         tools: list[dict] | None = None,
-    ) -> Any:  # anthropic.types.Message
-        """Call the Anthropic Messages API with budget + rate + timeout guards."""
+    ) -> Any:  # returns LLMResponse (provider-agnostic)
+        """Call the configured LLM with budget + rate + timeout guards."""
         self._check_budget()
         self._throttle_if_needed()
 
         call_id = str(uuid.uuid4())[:8]
-        logger.debug("LLM call %s → model=%s tokens=%d", call_id, model, max_tokens)
-
-        kwargs: dict[str, Any] = dict(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=messages,
+        logger.debug(
+            "LLM call %s → provider=%s model=%s tokens=%d",
+            call_id, self._llm.name(), model, max_tokens,
         )
-        if tools:
-            kwargs["tools"] = tools
 
-        response = self._run_with_timeout(
-            lambda: self._client.messages.create(**kwargs),
+        response: LLMResponse = self._run_with_timeout(
+            lambda: self._llm.complete(
+                model=model,
+                system=system,
+                messages=messages,
+                max_tokens=max_tokens,
+                tools=tools,
+            ),
             timeout=self._timeouts.agent_call_seconds,
             label=f"LLM call {call_id}",
         )
 
-        self._record_cost(model, response.usage)
+        self._record_cost(model, response.input_tokens, response.output_tokens)
         logger.debug(
             "LLM call %s done — stop_reason=%s, cost_so_far=$%.4f",
             call_id, response.stop_reason, self._total_cost,
@@ -91,31 +109,31 @@ class Gatekeeper:
         return response
 
     def call_search(self, query: str) -> list[dict]:
-        """Search DuckDuckGo for evidence; returns up to 5 results."""
-        logger.debug("Evidence search: %r", query)
-        results = self._run_with_timeout(
-            lambda: self._search(query),
+        """Search via the configured search provider; returns up to 5 results as dicts."""
+        logger.debug("Evidence search via %s: %r", self._search.name(), query)
+        results: list[SearchResult] = self._run_with_timeout(
+            lambda: self._search.search(query, max_results=5),
             timeout=self._timeouts.evidence_search_seconds,
             label=f"search({query[:40]})",
         )
-        return results or []
+        return [
+            {"source": r.source, "quote": r.quote, "url": r.url}
+            for r in (results or [])
+        ]
 
     @property
     def total_cost(self) -> float:
         return self._total_cost
 
-    # ── internal helpers ───────────────────────────────────────────────────────
+    @property
+    def llm_provider_name(self) -> str:
+        return self._llm.name()
 
-    @staticmethod
-    def _require_api_key() -> str:
-        import os
-        key = os.getenv("ANTHROPIC_API_KEY", "")
-        if not key:
-            raise OSError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Copy .env.example → .env and add your key."
-            )
-        return key
+    @property
+    def search_provider_name(self) -> str:
+        return self._search.name()
+
+    # ── internal helpers ───────────────────────────────────────────────────────
 
     def _check_budget(self) -> None:
         with self._lock:
@@ -140,13 +158,13 @@ class Gatekeeper:
         if sleep_for > 0:
             time.sleep(sleep_for)
 
-    def _record_cost(self, model: str, usage: Any) -> None:
+    def _record_cost(self, model: str, input_tokens: int, output_tokens: int) -> None:
         pricing = self._pricing.get(model)
         if pricing is None:
             return  # unknown model — skip cost tracking
         cost = (
-            usage.input_tokens * pricing.input_per_mtok / 1_000_000
-            + usage.output_tokens * pricing.output_per_mtok / 1_000_000
+            input_tokens * pricing.input_per_mtok / 1_000_000
+            + output_tokens * pricing.output_per_mtok / 1_000_000
         )
         with self._lock:
             self._total_cost += cost
@@ -159,15 +177,3 @@ class Gatekeeper:
                 return future.result(timeout=timeout)
             except FutureTimeoutError as exc:
                 raise TimeoutError(f"{label} timed out after {timeout}s") from exc
-
-    @staticmethod
-    def _search(query: str) -> list[dict]:
-        results = []
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=5):
-                results.append({
-                    "source": r.get("title", "Unknown"),
-                    "quote": r.get("body", "")[:400],
-                    "url": r.get("href"),
-                })
-        return results

@@ -1,0 +1,7 @@
+{
+  "_comment": "Select which LLM and search provider to use at runtime.",
+  "llm_provider": "anthropic",
+  "search_provider": "duckduckgo",
+  "available_llm_providers": ["anthropic", "mock"],
+  "available_search_providers": ["duckduckgo", "mock"]
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "Rate-limit and retry parameters (applied by Gatekeeper regardless of provider).",
+  "max_calls_per_minute": 30,
+  "max_budget_usd": 2.0,
+  "retry_attempts": 3,
+  "retry_backoff_seconds": 2.0,
+  "timeouts": {
+    "agent_call_seconds": 120,
+    "evidence_search_seconds": 30
+  }
+}

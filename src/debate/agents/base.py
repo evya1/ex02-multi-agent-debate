@@ -2,13 +2,14 @@
 BaseAgent — shared LLM-call mechanics for all three debate participants.
 
 Design principles:
-  - Agents never call the Anthropic SDK directly; everything flows through Gatekeeper.
+  - Agents never call providers directly; everything flows through Gatekeeper.
   - Tool-use (evidence retrieval) is handled in the base class so Pro and Con
     don't need to duplicate the response-loop logic.
   - JSON parsing is centralised with a layered fallback strategy so a slightly
-    malformed Claude response doesn't crash the debate.
+    malformed response doesn't crash the debate.
   - Each agent maintains its own conversation history (the judge's history stays
     separate from the debaters', which keeps context windows smaller).
+  - LLMResponse (provider-agnostic) is used throughout; no direct SDK types.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ from debate.gatekeeper import Gatekeeper
 from debate.models.config import AgentModelConfig
 from debate.models.message import DebateMessage, Evidence, MessageType, Role
 from debate.models.skill import SkillDefinition
+from debate.providers.base import LLMResponse
 from debate.skills.registry import SkillRegistry
 
 logger = logging.getLogger(__name__)
@@ -85,16 +87,22 @@ class BaseAgent(ABC):
         """
         Send `user_message`, resolve any tool calls, and return the final text.
 
-        The tool-use loop works as follows:
+        Uses provider-agnostic LLMResponse:
           1. Send the current history + new user message.
-          2. If the LLM returns stop_reason == "tool_use", execute the tool.
-          3. Append both the assistant's tool-use block and our tool_result.
-          4. Repeat until the LLM produces a text response.
+          2. If the response contains tool_calls, execute each tool.
+          3. Append the assistant tool-use content and tool_result to history.
+          4. Repeat until the response has no tool_calls (final text turn).
+
+        History management for tool-use:
+          - When tool_calls are present, the raw provider response is echoed
+            back as the assistant content so the provider can reconstruct
+            the full context (e.g. Anthropic's content-block format).
+          - If raw is None (e.g. mock provider), the text content is used.
         """
         self._history.append({"role": "user", "content": user_message})
         tools = self._tools_for_role()
 
-        response = self._gatekeeper.call_llm(
+        response: LLMResponse = self._gatekeeper.call_llm(
             messages=self._history,
             system=self._system_prompt,
             model=self._config.model,
@@ -102,16 +110,23 @@ class BaseAgent(ABC):
             tools=tools,
         )
 
-        while response.stop_reason == "tool_use":
-            tool_block = next(b for b in response.content if b.type == "tool_use")
-            search_results = self._gatekeeper.call_search(tool_block.input["query"])
+        while response.tool_calls:
+            tool_call = response.tool_calls[0]
+            search_results = self._gatekeeper.call_search(tool_call.input["query"])
 
-            self._history.append({"role": "assistant", "content": response.content})
+            # Echo back the provider-native content so the API gets the right format.
+            # Anthropic requires the original content-block list; mocks use plain text.
+            assistant_content = (
+                response.raw.content
+                if response.raw is not None
+                else response.content
+            )
+            self._history.append({"role": "assistant", "content": assistant_content})
             self._history.append({
                 "role": "user",
                 "content": [{
                     "type": "tool_result",
-                    "tool_use_id": tool_block.id,
+                    "tool_use_id": tool_call.id,
                     "content": json.dumps(search_results),
                 }],
             })
@@ -124,7 +139,7 @@ class BaseAgent(ABC):
                 tools=tools,
             )
 
-        text = next(b.text for b in response.content if b.type == "text")
+        text = response.content
         self._history.append({"role": "assistant", "content": text})
         return text
 
