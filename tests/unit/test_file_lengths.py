@@ -37,15 +37,7 @@ _CHECK_ROOTS = [
 # Remove an entry here once the file has been split to ≤ 150 lines.
 KNOWN_VIOLATIONS: frozenset[str] = frozenset(
     [
-        "src/debate/agents/base.py",        # 222 lines — split pending
-        "src/debate/agents/judge.py",        # 242 lines — split pending
-        "src/debate/cli/entry.py",           # 200 lines — split pending
-        "src/debate/cli/menu.py",            # 171 lines — split pending
-        "src/debate/gatekeeper.py",          # 182 lines — split pending
-        "src/debate/sdk/sdk.py",             # 195 lines — split pending
-        "src/debate/skills/definitions.py",  # 331 lines — split pending
-        "tests/test_agents.py",              # 169 lines — split pending
-        "tests/unit/test_agents.py",         # 169 lines — split pending
+        # All previous violations have been split — no entries remaining.
     ]
 )
 

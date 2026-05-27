@@ -4,10 +4,11 @@ AgentDebateSDK — clean programmatic interface for the debate system.
 Why a dedicated SDK class on top of DebateRunner?
   - Provides method-level documentation and discoverable API.
   - Adds utility methods (load_transcript, validate_config, list_skills,
-    validate_skills) that are useful in scripts and integrations but are
-    out of scope for DebateRunner.
-  - Decouples the public API from implementation details; internal
-    refactors don't break callers.
+    validate_skills) that are useful in scripts and integrations.
+  - Decouples the public API from implementation details.
+
+Config loading and transcript I/O are delegated to sub-modules so this file
+stays focused on the public method surface.
 
 Usage:
     from debate.sdk import AgentDebateSDK
@@ -15,17 +16,16 @@ Usage:
     sdk = AgentDebateSDK()
     transcript, verdict = sdk.run_debate("AI will help humanity", rounds=3)
     print(verdict.summary())
-
-    skills = sdk.list_skills()
-    ok = sdk.validate_skills()
 """
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 from typing import Any
+
+from debate.sdk.config_loader import load_sdk_config
+from debate.sdk.transcript import load_transcript as _load_transcript
 
 logger = logging.getLogger(__name__)
 
@@ -48,39 +48,8 @@ class AgentDebateSDK:
         *,
         use_mock: bool = False,
     ) -> None:
-        from debate.models.config import AppConfig
-
         self._use_mock = use_mock
-
-        if config_path is not None or models_path is not None:
-            dp = Path(config_path) if config_path else Path("config/debate.yaml")
-            mp = Path(models_path) if models_path else Path("config/models.yaml")
-            self._config = AppConfig.from_yaml_files(str(dp), str(mp))
-        else:
-            try:
-                self._config = AppConfig.from_yaml_files()
-            except Exception:
-                # Fallback minimal config for mock-only / validation use
-                from debate.models.config import (
-                    AgentModelConfig,
-                    DebateParameters,
-                    GatekeeperSettings,
-                    LogSettings,
-                    TimeoutSettings,
-                    WatchdogSettings,
-                )
-
-                _agent = AgentModelConfig(model="claude-haiku-4-5-20251001", max_tokens=512)
-                self._config = AppConfig(
-                    debate=DebateParameters(topic="AI will benefit humanity", rounds=3),
-                    judge=_agent,
-                    pro=_agent,
-                    con=_agent,
-                    gatekeeper=GatekeeperSettings(max_budget_usd=2.0, max_calls_per_minute=30),
-                    timeouts=TimeoutSettings(agent_call_seconds=120, evidence_search_seconds=30),
-                    watchdog=WatchdogSettings(enabled=False),
-                    logging=LogSettings(console=False),
-                )
+        self._config = load_sdk_config(config_path, models_path)
 
     # ── core debate ────────────────────────────────────────────────────────────
 
@@ -119,34 +88,14 @@ class AgentDebateSDK:
     def load_transcript(self, path: str | Path) -> list[Any]:
         """
         Load a JSONL debate log and return a list of DebateMessage objects.
-
-        Silently skips event-only lines (e.g. debate_start, debate_end).
+        Silently skips event-only lines (debate_start, debate_end, etc.).
         """
-        from debate.models.message import DebateMessage
-
-        messages = []
-        with open(path) as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    data = json.loads(line)
-                    if "role" in data and "content" in data:
-                        messages.append(DebateMessage.model_validate(data))
-                except Exception as exc:
-                    logger.debug("Skipping non-message log line: %s", exc)
-        return messages
+        return _load_transcript(path)
 
     # ── config validation ──────────────────────────────────────────────────────
 
     def validate_config(self, path: str | Path | None = None) -> bool:
-        """
-        Validate a debate config file.  Returns True if valid.
-
-        Args:
-            path: Path to debate.yaml (defaults to config/debate.yaml).
-        """
+        """Validate a debate config file.  Returns True if valid."""
         from debate.models.config import AppConfig
 
         target = Path(path) if path else Path("config/debate.yaml")
