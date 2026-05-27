@@ -30,6 +30,10 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.pytest.ini_options.markers]
+unit = "marks tests as unit tests (fast, offline)"
+integration = "marks tests as integration tests (may run full pipeline)"
+
 [tool.ruff]
 src = ["src"]
 line-length = 100
