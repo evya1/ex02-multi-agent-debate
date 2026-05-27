@@ -16,6 +16,7 @@ Provider-agnostic since Phase 07:
   Instead it holds an AbstractLLMProvider and AbstractSearchProvider, injected
   at construction.  Swap providers by passing different implementations.
 """
+
 from __future__ import annotations
 
 import logging
@@ -86,7 +87,10 @@ class Gatekeeper:
         call_id = str(uuid.uuid4())[:8]
         logger.debug(
             "LLM call %s → provider=%s model=%s tokens=%d",
-            call_id, self._llm.name(), model, max_tokens,
+            call_id,
+            self._llm.name(),
+            model,
+            max_tokens,
         )
 
         response: LLMResponse = self._run_with_timeout(
@@ -104,7 +108,9 @@ class Gatekeeper:
         self._record_cost(model, response.input_tokens, response.output_tokens)
         logger.debug(
             "LLM call %s done — stop_reason=%s, cost_so_far=$%.4f",
-            call_id, response.stop_reason, self._total_cost,
+            call_id,
+            response.stop_reason,
+            self._total_cost,
         )
         return response
 
@@ -116,10 +122,7 @@ class Gatekeeper:
             timeout=self._timeouts.evidence_search_seconds,
             label=f"search({query[:40]})",
         )
-        return [
-            {"source": r.source, "quote": r.quote, "url": r.url}
-            for r in (results or [])
-        ]
+        return [{"source": r.source, "quote": r.quote, "url": r.url} for r in (results or [])]
 
     @property
     def total_cost(self) -> float:

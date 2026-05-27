@@ -8,6 +8,7 @@ Two files are merged:
 Why Pydantic instead of plain dicts?  Field validation, IDE completion,
 and clean error messages if a config key is missing or the wrong type.
 """
+
 from __future__ import annotations
 
 import os

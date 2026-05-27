@@ -1,4 +1,5 @@
 """Tests for the skill definitions and registry."""
+
 from __future__ import annotations
 
 import pytest
@@ -29,8 +30,13 @@ class TestSkillRegistry:
     def test_register_and_get(self):
         registry = SkillRegistry()
         skill = SkillDefinition(
-            name="s1", description="x", intended_agents=["judge"],
-            trigger="t", instructions="i", input_schema={}, output_schema={},
+            name="s1",
+            description="x",
+            intended_agents=["judge"],
+            trigger="t",
+            instructions="i",
+            input_schema={},
+            output_schema={},
         )
         registry.register(skill)
         assert registry.get("s1") is skill
@@ -43,13 +49,25 @@ class TestSkillRegistry:
     def test_get_for_agent_filters_correctly(self):
         registry = SkillRegistry()
         for role in ["judge", "pro", "con"]:
-            registry.register(SkillDefinition(
-                name=f"skill_{role}", description="", intended_agents=[role],
-                trigger="", instructions="", input_schema={}, output_schema={},
-            ))
+            registry.register(
+                SkillDefinition(
+                    name=f"skill_{role}",
+                    description="",
+                    intended_agents=[role],
+                    trigger="",
+                    instructions="",
+                    input_schema={},
+                    output_schema={},
+                )
+            )
         shared = SkillDefinition(
-            name="shared", description="", intended_agents=["pro", "con"],
-            trigger="", instructions="", input_schema={}, output_schema={},
+            name="shared",
+            description="",
+            intended_agents=["pro", "con"],
+            trigger="",
+            instructions="",
+            input_schema={},
+            output_schema={},
         )
         registry.register(shared)
 
@@ -62,10 +80,17 @@ class TestSkillRegistry:
     def test_len(self):
         registry = SkillRegistry()
         assert len(registry) == 0
-        registry.register(SkillDefinition(
-            name="x", description="", intended_agents=[], trigger="",
-            instructions="", input_schema={}, output_schema={},
-        ))
+        registry.register(
+            SkillDefinition(
+                name="x",
+                description="",
+                intended_agents=[],
+                trigger="",
+                instructions="",
+                input_schema={},
+                output_schema={},
+            )
+        )
         assert len(registry) == 1
 
 
@@ -91,11 +116,14 @@ class TestAllSkills:
         loaded = {s.name for s in registry.all()}
         assert required == loaded
 
-    @pytest.mark.parametrize("role,expected_count", [
-        ("judge", 3),  # moderation, verdict, json_protocol
-        ("pro", 4),    # pro_argument, evidence, rebuttal, json_protocol
-        ("con", 4),    # con_argument, evidence, rebuttal, json_protocol
-    ])
+    @pytest.mark.parametrize(
+        "role,expected_count",
+        [
+            ("judge", 3),  # moderation, verdict, json_protocol
+            ("pro", 4),  # pro_argument, evidence, rebuttal, json_protocol
+            ("con", 4),  # con_argument, evidence, rebuttal, json_protocol
+        ],
+    )
     def test_skill_counts_per_agent(self, role, expected_count):
         registry = build_registry()
         assert len(registry.get_for_agent(role)) == expected_count

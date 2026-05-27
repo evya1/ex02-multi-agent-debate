@@ -6,6 +6,7 @@ Why a registry instead of importing definitions directly?
     by injecting a registry populated with stub skills.
   - New skills can be added without changing any agent code.
 """
+
 from __future__ import annotations
 
 from debate.models.skill import SkillDefinition

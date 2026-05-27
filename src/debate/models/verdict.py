@@ -5,6 +5,7 @@ Design choice: a tie is structurally impossible — `winner` can only be
 Role.PRO or Role.CON.  If Claude returns equal total scores, the verdict
 skill instructs it to award momentum-based victory instead.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, field_validator

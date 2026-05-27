@@ -7,6 +7,7 @@ Why a factory?
     the logic avoids repetition and makes it easy to add new providers.
   - The `use_mock` flag gives tests and CLI `--mock` mode a single toggle.
 """
+
 from __future__ import annotations
 
 import json
@@ -34,9 +35,11 @@ def build_llm_provider(provider_name: str = "anthropic") -> AbstractLLMProvider:
     """Instantiate the named LLM provider."""
     if provider_name == "anthropic":
         from debate.providers.anthropic_provider import AnthropicProvider
+
         return AnthropicProvider()
     if provider_name == "mock":
         from debate.providers.mock_llm import MockLLMProvider
+
         return MockLLMProvider()
     raise ValueError(f"Unknown LLM provider: {provider_name!r}")
 
@@ -45,9 +48,11 @@ def build_search_provider(provider_name: str = "duckduckgo") -> AbstractSearchPr
     """Instantiate the named search provider."""
     if provider_name in ("duckduckgo", "ddgs"):
         from debate.providers.anthropic_provider import DuckDuckGoSearchProvider
+
         return DuckDuckGoSearchProvider()
     if provider_name == "mock":
         from debate.providers.mock_search import MockSearchProvider
+
         return MockSearchProvider()
     raise ValueError(f"Unknown search provider: {provider_name!r}")
 
@@ -68,6 +73,7 @@ def build_providers(
         logger.info("Provider mode: mock (offline)")
         from debate.providers.mock_llm import MockLLMProvider
         from debate.providers.mock_search import MockSearchProvider
+
         return MockLLMProvider(), MockSearchProvider()
 
     cfg = load_provider_config(config_path)

@@ -15,6 +15,7 @@ Tool-use (function calling) is expressed as a list of ToolDefinition
 dicts in the same shape Claude's API expects.  Providers that do not
 support tool-use should raise NotImplementedError.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -23,9 +24,11 @@ from typing import Any
 
 # ── Shared data structures ─────────────────────────────────────────────────────
 
+
 @dataclass
 class ToolCall:
     """A single tool invocation returned by the LLM."""
+
     id: str
     name: str
     input: dict[str, Any]
@@ -34,23 +37,26 @@ class ToolCall:
 @dataclass
 class LLMResponse:
     """Provider-agnostic response envelope."""
-    content: str                        # final text content (may be empty if tool_use)
-    stop_reason: str                    # "end_turn" | "tool_use" | "max_tokens" | ...
+
+    content: str  # final text content (may be empty if tool_use)
+    stop_reason: str  # "end_turn" | "tool_use" | "max_tokens" | ...
     tool_calls: list[ToolCall] = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
-    raw: Any = None                     # original provider response (for debugging)
+    raw: Any = None  # original provider response (for debugging)
 
 
 @dataclass
 class SearchResult:
     """One result from a web-search provider."""
+
     source: str
     quote: str
     url: str | None = None
 
 
 # ── Abstract providers ─────────────────────────────────────────────────────────
+
 
 class AbstractLLMProvider(ABC):
     """

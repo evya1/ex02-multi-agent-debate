@@ -6,6 +6,7 @@ Why JSONL?
   - The file is human-readable AND machine-parseable without a special parser.
   - Each entry is a self-contained snapshot, so partial logs are still useful.
 """
+
 from __future__ import annotations
 
 import json

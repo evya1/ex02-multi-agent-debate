@@ -10,6 +10,7 @@ Phase 08 additions:
   - debate_id: ties all messages in one session together (multi-session logging).
   - ping_index: for mock/ping mode — which ping produced this message.
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -42,13 +43,13 @@ class Evidence(BaseModel):
 
 class DebateMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
-    debate_id: str = ""           # set by JudgeAgent for the whole session
+    debate_id: str = ""  # set by JudgeAgent for the whole session
     round: int
     role: Role
     message_type: MessageType
     content: str
     evidence: list[Evidence] = Field(default_factory=list)
-    skill_id_used: str = ""       # which skill produced this message
+    skill_id_used: str = ""  # which skill produced this message
     ping_index: int | None = None  # only set in ping/mock mode
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     in_reply_to: str | None = None
@@ -59,8 +60,7 @@ class DebateMessage(BaseModel):
         body = self.content
         if self.evidence:
             citations = "\n".join(
-                f"  [{i + 1}] {e.source}: \"{e.quote}\""
-                for i, e in enumerate(self.evidence)
+                f'  [{i + 1}] {e.source}: "{e.quote}"' for i, e in enumerate(self.evidence)
             )
             body += f"\n\nEvidence:\n{citations}"
         return f"{header}\n{body}"

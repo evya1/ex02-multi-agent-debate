@@ -9,6 +9,7 @@ Owned skills (injected into system prompt):
 
 Mirror of ProAgent; only the role identity and system-prompt flavour differ.
 """
+
 from __future__ import annotations
 
 from debate.agents.base import EVIDENCE_TOOL, BaseAgent
@@ -36,8 +37,7 @@ class ConAgent(BaseAgent):
         return (
             "You are the CON debater in a structured AI debate.\n"
             "Your mission: argue persuasively AGAINST the topic.\n"
-            "Challenge the PRO's strongest points every round.\n\n"
-            + self._skill_prompt_blocks()
+            "Challenge the PRO's strongest points every round.\n\n" + self._skill_prompt_blocks()
         )
 
     def generate_argument(

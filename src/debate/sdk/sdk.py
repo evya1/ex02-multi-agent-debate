@@ -19,6 +19,7 @@ Usage:
     skills = sdk.list_skills()
     ok = sdk.validate_skills()
 """
+
 from __future__ import annotations
 
 import json
@@ -68,10 +69,13 @@ class AgentDebateSDK:
                     TimeoutSettings,
                     WatchdogSettings,
                 )
+
                 _agent = AgentModelConfig(model="claude-haiku-4-5-20251001", max_tokens=512)
                 self._config = AppConfig(
                     debate=DebateParameters(topic="AI will benefit humanity", rounds=3),
-                    judge=_agent, pro=_agent, con=_agent,
+                    judge=_agent,
+                    pro=_agent,
+                    con=_agent,
                     gatekeeper=GatekeeperSettings(max_budget_usd=2.0, max_calls_per_minute=30),
                     timeouts=TimeoutSettings(agent_call_seconds=120, evidence_search_seconds=30),
                     watchdog=WatchdogSettings(enabled=False),
@@ -161,6 +165,7 @@ class AgentDebateSDK:
     def list_skills(self) -> list[Any]:
         """Return all registered SkillDefinition objects."""
         from debate.skills.definitions import build_registry
+
         return list(build_registry().all())
 
     def validate_skills(self) -> dict[str, bool]:
@@ -184,6 +189,7 @@ class AgentDebateSDK:
             if not ok:
                 logger.warning(
                     "validate_skills: skill '%s' missing filesystem docs at %s",
-                    skill.name, skill_dir,
+                    skill.name,
+                    skill_dir,
                 )
         return results

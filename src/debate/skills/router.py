@@ -14,6 +14,7 @@ Routing rules:
   - Evidence retrieval is not routed here — it is always available to Pro/Con
     as a tool-use capability, not a turn-level skill.
 """
+
 from __future__ import annotations
 
 from debate.models.message import MessageType, Role
@@ -87,20 +88,14 @@ class SkillRouter:
         """
         if role == Role.JUDGE:
             return (
-                "verdict_skill"
-                if message_type == MessageType.VERDICT
-                else "judge_moderation_skill"
+                "verdict_skill" if message_type == MessageType.VERDICT else "judge_moderation_skill"
             )
         if role == Role.PRO:
             return (
-                "pro_argument_skill"
-                if message_type == MessageType.ARGUMENT
-                else "rebuttal_skill"
+                "pro_argument_skill" if message_type == MessageType.ARGUMENT else "rebuttal_skill"
             )
         if role == Role.CON:
             return (
-                "con_argument_skill"
-                if message_type == MessageType.ARGUMENT
-                else "rebuttal_skill"
+                "con_argument_skill" if message_type == MessageType.ARGUMENT else "rebuttal_skill"
             )
         return ""

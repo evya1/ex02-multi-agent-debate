@@ -2,6 +2,7 @@
 Tests for AgentDebateSDK — the high-level Python API.
 Uses mock providers so no API key is needed.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,6 +24,7 @@ class TestSDKRunDebate:
 
     def test_run_debate_verdict_has_winner(self, sdk):
         from debate.models.message import Role
+
         _, verdict = sdk.run_debate("AI will help humanity", rounds=1)
         assert verdict.winner in (Role.PRO, Role.CON)
 
@@ -46,14 +48,25 @@ class TestSDKLoadTranscript:
 
     def test_load_event_lines_skipped(self, tmp_path):
         import json
+
         p = tmp_path / "debate.jsonl"
         lines = [
             json.dumps({"event": "debate_start", "topic": "AI", "rounds": 1}),
-            json.dumps({"role": "judge", "round": 1, "message_type": "moderation",
-                        "content": "Welcome.", "evidence": [],
-                        "id": "abc", "debate_id": "", "skill_id_used": "",
-                        "ping_index": None,
-                        "timestamp": "2026-01-01T00:00:00+00:00", "in_reply_to": None}),
+            json.dumps(
+                {
+                    "role": "judge",
+                    "round": 1,
+                    "message_type": "moderation",
+                    "content": "Welcome.",
+                    "evidence": [],
+                    "id": "abc",
+                    "debate_id": "",
+                    "skill_id_used": "",
+                    "ping_index": None,
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                    "in_reply_to": None,
+                }
+            ),
             json.dumps({"event": "debate_end", "winner": "pro"}),
         ]
         p.write_text("\n".join(lines))

@@ -1,4 +1,5 @@
 """Tests for SkillRouter — maps agent actions to the correct skill."""
+
 from __future__ import annotations
 
 import pytest
@@ -48,6 +49,7 @@ class TestSkillRouterRoute:
 
     def test_returns_skill_definition(self, router):
         from debate.models.skill import SkillDefinition
+
         skill = router.route(Role.PRO, round_num=1)
         assert isinstance(skill, SkillDefinition)
 

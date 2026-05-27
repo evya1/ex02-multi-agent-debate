@@ -14,6 +14,7 @@ Owned skills (injected into system prompt):
   - verdict_skill            final scored judgment with no ties allowed
   - json_protocol_skill      enforces JSON-only output
 """
+
 from __future__ import annotations
 
 import logging
@@ -61,8 +62,7 @@ class JudgeAgent(BaseAgent):
             "You are the JUDGE and moderator of a structured AI debate.\n"
             "You are completely neutral — your role is to facilitate fair discourse\n"
             "and ultimately declare a winner based on argument quality alone.\n\n"
-            f"Debate topic: {self._topic}\n\n"
-            + self._skill_prompt_blocks()
+            f"Debate topic: {self._topic}\n\n" + self._skill_prompt_blocks()
         )
 
     # ── public debate interface ────────────────────────────────────────────────
@@ -76,7 +76,7 @@ class JudgeAgent(BaseAgent):
           → Judge summarises
         Pro and Con never interact directly.
         """
-        self._debate_id = str(uuid4())[:12]   # shared across all messages this session
+        self._debate_id = str(uuid4())[:12]  # shared across all messages this session
         transcript: list[DebateMessage] = []
 
         opening = self._open_debate()
@@ -94,17 +94,13 @@ class JudgeAgent(BaseAgent):
 
             # Pro receives the judge's intro (+ Con's last argument from round 2 on).
             pro_context = self._build_pro_context(moderation, last_con_message)
-            pro_msg = self._pro.generate_argument(
-                pro_context, round_num, debate_id=self._debate_id
-            )
+            pro_msg = self._pro.generate_argument(pro_context, round_num, debate_id=self._debate_id)
             transcript.append(pro_msg)
             logger.info("Pro argued (round %d, %d chars)", round_num, len(pro_msg.content))
 
             # Judge routes Pro's argument to Con.
             con_context = self._build_con_context(moderation, pro_msg)
-            con_msg = self._con.generate_argument(
-                con_context, round_num, debate_id=self._debate_id
-            )
+            con_msg = self._con.generate_argument(con_context, round_num, debate_id=self._debate_id)
             transcript.append(con_msg)
             logger.info("Con argued (round %d, %d chars)", round_num, len(con_msg.content))
 
@@ -115,30 +111,37 @@ class JudgeAgent(BaseAgent):
             last_con_message = con_msg
 
         verdict = self._render_verdict(transcript)
-        transcript.append(DebateMessage(
-            round=self._total_rounds + 1,
-            role=Role.JUDGE,
-            message_type=MessageType.VERDICT,
-            content=verdict.reasoning,
-            debate_id=self._debate_id,
-            skill_id_used="verdict_skill",
-        ))
+        transcript.append(
+            DebateMessage(
+                round=self._total_rounds + 1,
+                role=Role.JUDGE,
+                message_type=MessageType.VERDICT,
+                content=verdict.reasoning,
+                debate_id=self._debate_id,
+                skill_id_used="verdict_skill",
+            )
+        )
 
-        logger.info("Verdict: %s wins (PRO %.1f — CON %.1f)",
-                    verdict.winner.value, verdict.total_pro_score, verdict.total_con_score)
+        logger.info(
+            "Verdict: %s wins (PRO %.1f — CON %.1f)",
+            verdict.winner.value,
+            verdict.total_pro_score,
+            verdict.total_con_score,
+        )
         return transcript, verdict
 
     # ── private judge actions ──────────────────────────────────────────────────
 
     def _open_debate(self) -> DebateMessage:
         raw = self._call_llm(
-            f"Open the debate on the topic: \"{self._topic}\".\n"
+            f'Open the debate on the topic: "{self._topic}".\n'
             f"Introduce the format: {self._total_rounds} rounds, one side speaks at a time.\n"
             "Remind both sides to be respectful and to cite evidence."
         )
         data = self._parse_json(raw)
         return DebateMessage(
-            round=0, role=Role.JUDGE,
+            round=0,
+            role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
             debate_id=self._debate_id,
@@ -152,7 +155,8 @@ class JudgeAgent(BaseAgent):
         )
         data = self._parse_json(raw)
         return DebateMessage(
-            round=round_num, role=Role.JUDGE,
+            round=round_num,
+            role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
             debate_id=self._debate_id,
@@ -170,7 +174,8 @@ class JudgeAgent(BaseAgent):
         )
         data = self._parse_json(raw)
         return DebateMessage(
-            round=round_num, role=Role.JUDGE,
+            round=round_num,
+            role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
             debate_id=self._debate_id,

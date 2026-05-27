@@ -3,6 +3,7 @@ Tests for the Gatekeeper's budget accounting, rate limiting, and timeout logic.
 
 Uses MockLLMProvider and MockSearchProvider so no real API calls are made.
 """
+
 from __future__ import annotations
 
 import time

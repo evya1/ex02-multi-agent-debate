@@ -3,6 +3,7 @@ MockSearchProvider — deterministic fake search results for offline tests.
 
 Returns a fixed list of SearchResult objects so tests never hit DuckDuckGo.
 """
+
 from __future__ import annotations
 
 from debate.providers.base import AbstractSearchProvider, SearchResult
@@ -26,7 +27,7 @@ class MockSearchProvider(AbstractSearchProvider):
 
     def __init__(self, results: list[SearchResult] | None = None) -> None:
         self._results = results or _DEFAULT_RESULTS
-        self.queries: list[str] = []        # record every query for assertions
+        self.queries: list[str] = []  # record every query for assertions
 
     def name(self) -> str:
         return "mock_search"

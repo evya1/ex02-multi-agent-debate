@@ -11,6 +11,7 @@ Design principles:
     separate from the debaters', which keeps context windows smaller).
   - LLMResponse (provider-agnostic) is used throughout; no direct SDK types.
 """
+
 from __future__ import annotations
 
 import json
@@ -117,19 +118,21 @@ class BaseAgent(ABC):
             # Echo back the provider-native content so the API gets the right format.
             # Anthropic requires the original content-block list; mocks use plain text.
             assistant_content = (
-                response.raw.content
-                if response.raw is not None
-                else response.content
+                response.raw.content if response.raw is not None else response.content
             )
             self._history.append({"role": "assistant", "content": assistant_content})
-            self._history.append({
-                "role": "user",
-                "content": [{
-                    "type": "tool_result",
-                    "tool_use_id": tool_call.id,
-                    "content": json.dumps(search_results),
-                }],
-            })
+            self._history.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tool_call.id,
+                            "content": json.dumps(search_results),
+                        }
+                    ],
+                }
+            )
 
             response = self._gatekeeper.call_llm(
                 messages=self._history,
@@ -189,11 +192,13 @@ class BaseAgent(ABC):
         for entry in raw_list:
             if not entry.get("quote"):
                 continue
-            result.append(Evidence(
-                source=entry.get("source", "Unknown"),
-                quote=entry["quote"],
-                url=entry.get("url"),
-            ))
+            result.append(
+                Evidence(
+                    source=entry.get("source", "Unknown"),
+                    quote=entry["quote"],
+                    url=entry.get("url"),
+                )
+            )
         return result
 
     # ── Skill helpers ──────────────────────────────────────────────────────────

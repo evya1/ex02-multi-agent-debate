@@ -7,6 +7,7 @@ Everything else talks to `AbstractLLMProvider` / `AbstractSearchProvider`.
 Environment:
     ANTHROPIC_API_KEY  (required — read from environment; never from source)
 """
+
 from __future__ import annotations
 
 import os
@@ -30,8 +31,7 @@ class AnthropicProvider(AbstractLLMProvider):
         key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
         if not key:
             raise OSError(
-                "ANTHROPIC_API_KEY is not set. "
-                "Copy .env.example → .env and add your key."
+                "ANTHROPIC_API_KEY is not set. Copy .env.example → .env and add your key."
             )
         self._client = anthropic.Anthropic(api_key=key)
 
@@ -89,9 +89,11 @@ class DuckDuckGoSearchProvider(AbstractSearchProvider):
         results: list[SearchResult] = []
         with DDGS() as ddgs:
             for r in ddgs.text(query, max_results=max_results):
-                results.append(SearchResult(
-                    source=r.get("title", "Unknown"),
-                    quote=r.get("body", "")[:400],
-                    url=r.get("href"),
-                ))
+                results.append(
+                    SearchResult(
+                        source=r.get("title", "Unknown"),
+                        quote=r.get("body", "")[:400],
+                        url=r.get("href"),
+                    )
+                )
         return results

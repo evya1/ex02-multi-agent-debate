@@ -4,6 +4,7 @@ Shared pytest fixtures.
 All fixtures use mock providers so tests run offline without any API key.
 The debate config is set to 1 round to keep test execution fast.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

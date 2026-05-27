@@ -5,6 +5,7 @@ The full chain (Runner → Judge → Pro/Con → Gatekeeper) is exercised
 using MockLLMProvider and MockSearchProvider — no real API or network
 access is required.
 """
+
 from __future__ import annotations
 
 from debate.models.message import Role

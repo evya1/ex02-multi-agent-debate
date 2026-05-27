@@ -1,4 +1,5 @@
 """Tests for Pydantic data models."""
+
 from __future__ import annotations
 
 import pytest
@@ -41,6 +42,7 @@ class TestDebateMessage:
 
     def test_to_log_entry_is_serialisable(self):
         import json
+
         msg = DebateMessage(
             round=1, role=Role.JUDGE, message_type=MessageType.MODERATION, content="Welcome."
         )
@@ -57,8 +59,11 @@ class TestDebateMessage:
 
     def test_skill_id_used_set(self):
         msg = DebateMessage(
-            round=1, role=Role.PRO, message_type=MessageType.ARGUMENT,
-            content="Test.", skill_id_used="pro_argument_skill"
+            round=1,
+            role=Role.PRO,
+            message_type=MessageType.ARGUMENT,
+            content="Test.",
+            skill_id_used="pro_argument_skill",
         )
         assert msg.skill_id_used == "pro_argument_skill"
 

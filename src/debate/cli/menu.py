@@ -9,6 +9,7 @@ The menu gives operators a zero-code way to:
   - Change the topic or round count
   - Print a previous transcript from the JSONL log
 """
+
 from __future__ import annotations
 
 import json
@@ -59,12 +60,14 @@ class DebateCLI:
     # ── menu screens ───────────────────────────────────────────────────────────
 
     def _print_banner(self) -> None:
-        console.print(Panel.fit(
-            "[bold blue]🤖 AI Agent Debate System[/bold blue]\n"
-            "[dim]Exercise 02 — Orchestration of AI[/dim]",
-            border_style="blue",
-            padding=(1, 4),
-        ))
+        console.print(
+            Panel.fit(
+                "[bold blue]🤖 AI Agent Debate System[/bold blue]\n"
+                "[dim]Exercise 02 — Orchestration of AI[/dim]",
+                border_style="blue",
+                padding=(1, 4),
+            )
+        )
 
     def _main_menu(self) -> str:
         console.print()
@@ -119,14 +122,13 @@ class DebateCLI:
             colour = _ROLE_COLOUR.get(msg.role, "white")
             role_tag = msg.role.value.upper()
             label = (
-                f"[{colour}][{role_tag} | Round {msg.round}"
-                f" | {msg.message_type.value}][/{colour}]"
+                f"[{colour}][{role_tag} | Round {msg.round} | {msg.message_type.value}][/{colour}]"
             )
             console.print(f"\n{label}")
             console.print(msg.content)
             if msg.evidence:
                 for i, ev in enumerate(msg.evidence, 1):
-                    console.print(f"  [dim][{i}] {ev.source}: \"{ev.quote[:120]}\"[/dim]")
+                    console.print(f'  [dim][{i}] {ev.source}: "{ev.quote[:120]}"[/dim]')
 
     def _print_verdict(self, verdict: Verdict) -> None:
         console.print(Rule("[bold]Verdict[/bold]"))

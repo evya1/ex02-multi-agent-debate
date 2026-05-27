@@ -11,6 +11,7 @@ Why hard-code skills here rather than load from YAML?
   - Python gives us string formatting, constants, and IDE support.
   - config/skills.yaml still documents the assignment for ops/docs purposes.
 """
+
 from __future__ import annotations
 
 from debate.models.skill import SkillDefinition
@@ -246,8 +247,12 @@ Rules:
             "key_turning_point": {"type": "string"},
         },
         "required": [
-            "message_type", "winner", "total_pro_score",
-            "total_con_score", "reasoning", "key_turning_point",
+            "message_type",
+            "winner",
+            "total_pro_score",
+            "total_con_score",
+            "reasoning",
+            "key_turning_point",
         ],
     },
 )

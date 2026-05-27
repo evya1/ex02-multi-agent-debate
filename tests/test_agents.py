@@ -5,6 +5,7 @@ All Gatekeeper calls are mocked so no real API keys or network access
 are required.  Tests validate JSON parsing, message structure, routing
 logic, and verdict building.
 """
+
 from __future__ import annotations
 
 from debate.agents.base import BaseAgent

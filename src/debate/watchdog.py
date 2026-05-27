@@ -9,6 +9,7 @@ Why a watchdog instead of a hard timeout in every call?
   - Keeping it non-destructive means a slow-but-valid call still completes;
     only genuinely hung calls need manual intervention.
 """
+
 from __future__ import annotations
 
 import logging
@@ -75,7 +76,8 @@ class Watchdog:
                 if elapsed > self._config.stall_threshold_seconds:
                     logger.warning(
                         "Watchdog: call '%s' has been running for %.0fs — possible stall.",
-                        cid, elapsed,
+                        cid,
+                        elapsed,
                     )
 
 

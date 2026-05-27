@@ -10,6 +10,7 @@ Owned skills (injected into system prompt):
 The Pro agent only receives context from the Judge (round intro + Con's last message).
 It never holds a reference to the Con agent.
 """
+
 from __future__ import annotations
 
 from debate.agents.base import EVIDENCE_TOOL, BaseAgent

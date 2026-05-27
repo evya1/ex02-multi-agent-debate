@@ -4,6 +4,7 @@ Tests for per-skill filesystem directories.
 Phase 09 requirement: every skill has its own directory under skills/
 containing SKILL.md (machine metadata) and prompt.md (human prompt).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,9 +26,7 @@ _EXPECTED_SKILLS = [
 
 @pytest.mark.parametrize("skill_name", _EXPECTED_SKILLS)
 def test_skill_directory_exists(skill_name: str) -> None:
-    assert (_SKILLS_ROOT / skill_name).is_dir(), (
-        f"Missing skill directory: skills/{skill_name}/"
-    )
+    assert (_SKILLS_ROOT / skill_name).is_dir(), f"Missing skill directory: skills/{skill_name}/"
 
 
 @pytest.mark.parametrize("skill_name", _EXPECTED_SKILLS)

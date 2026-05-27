@@ -22,6 +22,7 @@ Why a separate Runner class when JudgeAgent already has run_debate()?
   - Provider construction is centralised here so callers never import
     concrete provider classes.
 """
+
 from __future__ import annotations
 
 import logging
