@@ -49,6 +49,31 @@ class TestDebateMessage:
         json.dumps(entry)
         assert entry["role"] == "judge"
 
+    def test_skill_id_used_defaults_empty(self):
+        msg = DebateMessage(
+            round=1, role=Role.PRO, message_type=MessageType.ARGUMENT, content="Test."
+        )
+        assert msg.skill_id_used == ""
+
+    def test_skill_id_used_set(self):
+        msg = DebateMessage(
+            round=1, role=Role.PRO, message_type=MessageType.ARGUMENT,
+            content="Test.", skill_id_used="pro_argument_skill"
+        )
+        assert msg.skill_id_used == "pro_argument_skill"
+
+    def test_debate_id_defaults_empty(self):
+        msg = DebateMessage(
+            round=1, role=Role.PRO, message_type=MessageType.ARGUMENT, content="Test."
+        )
+        assert msg.debate_id == ""
+
+    def test_ping_index_optional(self):
+        msg = DebateMessage(
+            round=1, role=Role.PRO, message_type=MessageType.ARGUMENT, content="Test."
+        )
+        assert msg.ping_index is None
+
 
 class TestEvidence:
     def test_url_is_optional(self):

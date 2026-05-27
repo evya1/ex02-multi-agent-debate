@@ -17,6 +17,7 @@ Owned skills (injected into system prompt):
 from __future__ import annotations
 
 import logging
+from uuid import uuid4
 
 from debate.agents.base import BaseAgent
 from debate.agents.con import ConAgent
@@ -75,6 +76,7 @@ class JudgeAgent(BaseAgent):
           → Judge summarises
         Pro and Con never interact directly.
         """
+        self._debate_id = str(uuid4())[:12]   # shared across all messages this session
         transcript: list[DebateMessage] = []
 
         opening = self._open_debate()
@@ -92,13 +94,17 @@ class JudgeAgent(BaseAgent):
 
             # Pro receives the judge's intro (+ Con's last argument from round 2 on).
             pro_context = self._build_pro_context(moderation, last_con_message)
-            pro_msg = self._pro.generate_argument(pro_context, round_num)
+            pro_msg = self._pro.generate_argument(
+                pro_context, round_num, debate_id=self._debate_id
+            )
             transcript.append(pro_msg)
             logger.info("Pro argued (round %d, %d chars)", round_num, len(pro_msg.content))
 
             # Judge routes Pro's argument to Con.
             con_context = self._build_con_context(moderation, pro_msg)
-            con_msg = self._con.generate_argument(con_context, round_num)
+            con_msg = self._con.generate_argument(
+                con_context, round_num, debate_id=self._debate_id
+            )
             transcript.append(con_msg)
             logger.info("Con argued (round %d, %d chars)", round_num, len(con_msg.content))
 
@@ -114,6 +120,8 @@ class JudgeAgent(BaseAgent):
             role=Role.JUDGE,
             message_type=MessageType.VERDICT,
             content=verdict.reasoning,
+            debate_id=self._debate_id,
+            skill_id_used="verdict_skill",
         ))
 
         logger.info("Verdict: %s wins (PRO %.1f — CON %.1f)",
@@ -133,6 +141,8 @@ class JudgeAgent(BaseAgent):
             round=0, role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
+            debate_id=self._debate_id,
+            skill_id_used="judge_moderation_skill",
         )
 
     def _introduce_round(self, round_num: int) -> DebateMessage:
@@ -145,6 +155,8 @@ class JudgeAgent(BaseAgent):
             round=round_num, role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
+            debate_id=self._debate_id,
+            skill_id_used="judge_moderation_skill",
         )
 
     def _summarise_round(
@@ -161,6 +173,8 @@ class JudgeAgent(BaseAgent):
             round=round_num, role=Role.JUDGE,
             message_type=MessageType.MODERATION,
             content=data.get("content", raw),
+            debate_id=self._debate_id,
+            skill_id_used="judge_moderation_skill",
         )
 
     def _render_verdict(self, transcript: list[DebateMessage]) -> Verdict:

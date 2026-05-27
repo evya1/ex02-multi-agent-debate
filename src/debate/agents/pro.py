@@ -41,17 +41,24 @@ class ProAgent(BaseAgent):
             + self._skill_prompt_blocks()
         )
 
-    def generate_argument(self, context: str, round_num: int) -> DebateMessage:
+    def generate_argument(
+        self, context: str, round_num: int, *, debate_id: str = ""
+    ) -> DebateMessage:
         """
         Produce an opening argument (round 1) or a rebuttal (rounds 2+).
         `context` is the Judge's routing message, which includes the Con side's
         previous argument from round 2 onwards.
+        `debate_id` tags the message to its parent session.
         """
         message_type = MessageType.ARGUMENT if round_num == 1 else MessageType.REBUTTAL
+        skill_id = "pro_argument_skill" if round_num == 1 else "rebuttal_skill"
         prompt = self._compose_prompt(context, round_num, message_type)
         raw = self._call_llm(prompt)
         data = self._parse_json(raw)
-        return self._build_message(data, round_num, message_type, raw)
+        msg = self._build_message(data, round_num, message_type, raw)
+        msg.skill_id_used = skill_id
+        msg.debate_id = debate_id
+        return msg
 
     def _compose_prompt(self, context: str, round_num: int, msg_type: MessageType) -> str:
         if msg_type == MessageType.ARGUMENT:
